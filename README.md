@@ -1,0 +1,50 @@
+@momsfriendlydevco/eventer
+==========================
+Yet-another-implementation of the Node standard Event_Emitter library.
+
+This module acts like a drop-in replacement for the standard `require("events")` library but is promise compatible.
+
+This module only really differs in that it offers a nicer way to extend objects (`extend(myObject)`) and handles event emission (`emit(<event>)`) as promises.
+
+
+Why
+---
+This module differs from the standard event emitter library in several ways:
+
+* `emit()` returns a promise which resolves with the combined `Promise.all()` result of all subscribers. It also rejects with the first subscriber throw.
+* `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
+* Easily chainable
+
+
+API
+===
+
+emit(event)
+-----------
+Emit an event and return a Promise which will only resolve if all the downstream subscribers resolve. The result is that of `Promise.all(subscribers)` and is thus always an array.
+If any subscriber throws the rejection is the first subscriber error.
+Returns the source object.
+
+
+on(events, callback)
+--------------------
+Subscribe to one or more events. The callback is treated as a Promise factory.
+Returns the source object.
+
+
+once(<event-name>, <function>)
+------------------------------
+Bind to one event binding exactly _once_.
+This is effectively the same as subscribing via `on()` then calling `off()` to unsubscribing the same function.
+Returns the source object.
+
+
+off(<event-name>, [function])
+-----------------------------
+Remove an event subscription. If a specific function is specified that lone function is removed, otherwise all bindings are reset.
+Returns the source object.
+
+
+extend(<object>, [options])
+---------------------------
+Glue the above methods to the supplied object without all the *faff* of extending object prototypes.
