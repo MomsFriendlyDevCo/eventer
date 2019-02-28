@@ -14,6 +14,7 @@ This module differs from the standard event emitter library in several ways:
 * `emit()` returns a promise which resolves with the combined `Promise.all()` result of all subscribers. It also rejects with the first subscriber throw.
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
 * Easily chainable
+* Ability to hook into the event call sequence via `meta:preEmit` + `meta:postEmit`
 
 
 API
@@ -24,6 +25,7 @@ emit(event)
 Emit an event and return a Promise which will only resolve if all the downstream subscribers resolve. The result is that of `Promise.all(subscribers)` and is thus always an array.
 If any subscriber throws the rejection is the first subscriber error.
 Returns the source object.
+Note: This function will also emit `meta:preEmit` (as `(eventName, ...args)`) and `meta:postEmit` before and after each event.
 
 
 on(events, callback)
@@ -43,6 +45,16 @@ off(<event-name>, [function])
 -----------------------------
 Remove an event subscription. If a specific function is specified that lone function is removed, otherwise all bindings are reset.
 Returns the source object.
+
+
+listenerCount(<event-name>)
+---------------------------
+Return the number of listeners for a given event.
+
+
+eventNames()
+------------
+Return an array of strings representing each registered event.
 
 
 extend(<object>, [options])

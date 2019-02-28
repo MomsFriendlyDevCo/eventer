@@ -64,4 +64,24 @@ describe('simple scenario tests', ()=> {
 			.then(()=> expect(called).to.be.deep.equal(['foo', 'bar']))
 	});
 
+	it('should fire global `meta:preEmit` + `meta:postEmit` events', ()=> {
+		var called = [];
+		var emitter =  eventer.extend({});
+
+		emitter
+			.on('meta:preEmit', e => called.push(`pre:${e}`))
+			.on('meta:postEmit', e => called.push(`post:${e}`))
+			.on('foo', ()=> called.push('foo'))
+			.once('bar', ()=> called.push('bar'))
+			.on('baz', ()=> called.push('baz'));
+
+		expect(emitter.eventNames().sort()).to.deep.equal(['bar', 'baz', 'foo', 'meta:postEmit', 'meta:preEmit']);
+
+		return Promise.resolve()
+			.then(()=> emitter.emit('foo'))
+			.then(()=> emitter.emit('bar'))
+			.then(()=> emitter.emit('bar'))
+			.then(()=> expect(called).to.deep.equal(['pre:foo', 'foo', 'post:foo', 'pre:bar', 'bar', 'post:bar']))
+	});
+
 });

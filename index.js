@@ -84,16 +84,39 @@ function Eventer(options) {
 	* @returns {Promise} A promise with the combined result
 	*/
 	eventer.emit = (event, ...args) => {
-		if (!eventer.eventHandlers[event]) {
-			debug('Emit', event, '- event is unknown or has no subscribers');
+		if (!eventer.listenerCount(event)) {
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
 			return Eventer.settings.promise.resolve();
 		} else {
-			debug('Emit', event, 'to', eventer.eventHandlers[event].length, 'subscribers');
-			return Eventer.settings.promise.all(eventer.eventHandlers[event].map(c => c.cb(...args)));
+			var result;
+			return Promise.resolve()
+				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
+				.then(()=> Eventer.settings.promise.all(eventer.eventHandlers[event].map(c => c.cb(...args))))
+				.then(res => result = res)
+				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...args))))
+				.then(()=> result)
 		}
 	};
 
+
+
+	/**
+	* Return the number of listeners for an event
+	* @param {string} event The event to query
+	* @returns {number} The number of listeners
+	*/
+	eventer.listenerCount = event =>
+		!eventer.eventHandlers[event]
+			? 0
+			: eventer.eventHandlers[event].length;
+
+
+	/**
+	* Returns an array of all registered events
+	* @returns {array <string>} An array of strings for each known event
+	*/
+	eventer.eventNames = ()=>
+		Object.keys(eventer.eventHandlers);
 
 
 	/**
@@ -157,7 +180,7 @@ Eventer.extend = (obj, options) => {
 };
 
 Eventer.settings = {
-	exposeMethods: ['emit', 'off', 'on', 'once'],
+	exposeMethods: ['emit', 'eventNames', 'listenerCount', 'off', 'on', 'once'],
 	errors: {
 		emitOnUnknown: false,
 	},
