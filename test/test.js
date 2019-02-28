@@ -19,26 +19,37 @@ describe('simple scenario tests', ()=> {
 			.then(()=> expect(called).to.deep.equal(['foo', 'bar']))
 	});
 
-	it('should fire promise chains correctly', ()=> {
+	it.only('should fire promise chains correctly', function () {
+		this.timeout(10 * 1000);
+		var called = [];
 		var lastPromise;
+		var timerRunning = false;
 
 		var emitter =  eventer.extend({});
 
 		emitter
-			.on('foo', ()=> expect(lastPromise).to.not.be.ok)
-			.on('foo', ()=> lastPromise = 'foo')
-			.on('foo', ()=> new Promise(resolve => setTimeout(resolve, 300)))
-			.on('bar', ()=> expect(lastPromise).to.be.equal('foo'))
-			.on('bar', ()=> lastPromise = 'bar')
-			.on('bar', ()=> new Promise(resolve => setTimeout(resolve, 200)))
-			.on('baz', ()=> expect(lastPromise).to.be.equal('bar'))
-			.on('baz', ()=> lastPromise = 'bar')
-			.on('baz', ()=> new Promise(resolve => setTimeout(resolve, 100)))
+			.on('foo', ()=> new Promise(resolve => setTimeout(()=> {
+				expect(called).to.deep.equal([]);
+				called.push('foo');
+				resolve();
+			}, 300)))
+			.on('bar', ()=> { /* Do nothing */ })
+			.on('bar', ()=> new Promise(resolve => setTimeout(()=> {
+				expect(called).to.deep.equal(['foo']);
+				called.push('bar');
+				resolve();
+			}, 200)))
+			.on('baz', ()=> new Promise(resolve => setTimeout(()=> {
+				expect(called).to.deep.equal(['foo', 'bar']);
+				called.push('baz');
+				resolve();
+			}, 100)))
 
 		return Promise.resolve()
 			.then(()=> emitter.emit('foo'))
 			.then(()=> emitter.emit('bar'))
 			.then(()=> emitter.emit('baz'))
+			.then(()=> expect(called).to.deep.equal(['foo', 'bar', 'baz']))
 	});
 
 	it('should collect subscriber results', ()=> {
