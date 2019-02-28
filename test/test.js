@@ -16,10 +16,11 @@ describe('simple scenario tests', ()=> {
 			.then(()=> emitter.emit('foo'))
 			.then(()=> emitter.emit('bar'))
 			.then(()=> emitter.emit('bar'))
+			.then(()=> emitter.emit('non-existant'))
 			.then(()=> expect(called).to.deep.equal(['foo', 'bar']))
 	});
 
-	it.only('should fire promise chains correctly', function () {
+	it('should fire promise chains correctly', function () {
 		this.timeout(10 * 1000);
 		var called = [];
 		var lastPromise;
