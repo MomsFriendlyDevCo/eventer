@@ -98,6 +98,17 @@ describe('simple scenario tests', ()=> {
 			.then(()=> expect(called).to.be.deep.equal(['foo', 'bar']))
 	});
 
+	it('should handle external errors gracefully', done => {
+		eventer.extend({})
+			.on('import-error', ()=> require('./data/import-error.js'))
+			.emit('import-error')
+			.then(()=> expect.fail())
+			.catch(e => {
+				expect(e.toString()).to.match(/Cannot find module 'package-does-not-exist'/)
+				done();
+			});
+	});
+
 	it('should fire global `meta:preEmit` + `meta:postEmit` events', ()=> {
 		var called = [];
 		var emitter =  eventer.extend({});
