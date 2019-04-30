@@ -23,10 +23,10 @@ function Eventer(options) {
 		}
 		// }}}
 
-		var attacher = eventer.getCaller();
+		if (debug.enabled) var attacher = eventer.getCaller();
 
 		eventer.utils.castArray(events).forEach(event => {
-			debug('Registered subscriber for event', event, 'from', attacher.id, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
+			if (debug.enabled) debug('Registered subscriber for event', event, 'from', attacher.id, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
 			if (!eventer.eventHandlers[event]) eventer.eventHandlers[event] = [];
 			eventer.eventHandlers[event].push({
 				attacher, prereqs, cb,
@@ -131,14 +131,12 @@ function Eventer(options) {
 		stack.shift(); // this functions caller
 		stack.shift();
 
-		var bits = /^\s+at (.+?) \((.+?):([0-9]+?):([0-9]+?)\)$/.exec(stack[0]);
+		var parsed = /^\s*at (?<name>.+?) \((?<file>.+?):(?<line>[0-9]+?):(?<char>[0-9]+?)\)$/.exec(stack[0]);
+		if (!parsed) return {id: 'unknown'};
 
 		return {
-			id: bits[2] + (bits[3] ? ` +${bits[3]}` : ''),
-			name: bits[1],
-			file: bits[2],
-			line: bits[3],
-			char: bits[4],
+			id: parsed.groups.file + (parsed.groups.line ? ` +${parsed.groups.line}` : ''),
+			...parsed.groups,
 		};
 	};
 
