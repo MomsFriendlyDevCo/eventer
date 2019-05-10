@@ -1,4 +1,5 @@
 var debug = require('debug')('eventer');
+var debugDetail = require('debug')('eventer:detail');
 var fspath = require('path');
 
 function Eventer(options) {
@@ -23,10 +24,10 @@ function Eventer(options) {
 		}
 		// }}}
 
-		if (debug.enabled) var attacher = eventer.getCaller();
+		if (debug.enabled || debugDetail.enabled) var attacher = eventer.getCaller();
 
 		eventer.utils.castArray(events).forEach(event => {
-			if (debug.enabled) debug('Registered subscriber for event', event, 'from', attacher.id, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
+			if (debug.enabled) debug('Registered subscriber for', event, 'from', attacher.id, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
 			if (!eventer.eventHandlers[event]) eventer.eventHandlers[event] = [];
 			eventer.eventHandlers[event].push({
 				attacher, prereqs, cb,
@@ -45,7 +46,7 @@ function Eventer(options) {
 	*/
 	eventer.off = (events, cb) => {
 		eventer.utils.castArray(events).forEach(event => {
-			debug('Remove event handler', event);
+			debug('Remove listener', event);
 			if (cb) { // Specific function to remove
 				eventer.eventHandlers[event] = eventer.eventHandlers[event].filter(c => c.cb == cb);
 			} else { // Remove all handlers
@@ -84,10 +85,14 @@ function Eventer(options) {
 	* @returns {Promise} A promise with the combined result
 	*/
 	eventer.emit = (event, ...args) => {
-		if (!eventer.listenerCount(event)) {
+		var listenerCount = eventer.listenerCount(event);
+		if (!listenerCount) {
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
+			debug('Emit', '(no listeners)');
 			return Eventer.settings.promise.resolve();
 		} else {
+			debug('Emit', event, 'to', listenerCount, 'subscribers');
+			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.attacher.id));
 			var result;
 			return Promise.resolve()
 				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))

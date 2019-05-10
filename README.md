@@ -15,6 +15,20 @@ This module differs from the standard event emitter library in several ways:
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
 * Easily chainable
 * Ability to hook into the event call sequence via `meta:preEmit` + `meta:postEmit`
+* Debugging for the standard eventEmitter object is terrible
+
+
+Debugging
+=========
+This module uses the [debug NPM module](https://github.com/visionmedia/debug) for debugging. To enable set the environment variable to `DEBUG=eventer`.
+
+For example:
+
+```
+DEBUG=eventer node myFile.js
+```
+
+If you want detailed eventer information (like what exact functions are calling queued), set `DEBUG=eventer:detail`.
 
 
 API
