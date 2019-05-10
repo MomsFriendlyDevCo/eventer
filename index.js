@@ -13,24 +13,36 @@ function Eventer(options) {
 	* @param {string|array <string>} events The emitter to wait for, if this is an array of strings any of the matching events will trigger the callback, possibly multiple times
 	* @param {string|array} [prereqs] Optional single string or array of prerequisite services we should fire after
 	* @param {function} [cb] Optional callback to fire. Called as `(err, next)`
+	* @param {Object} [options] Addiotional options to pass
+	* @param {string} [options.alias] How to refer to the source of the function
 	* @return {Object} This chainable object
 	* @see app.fire()
 	*/
-	eventer.on = (events, prereqs, cb) => {
+	eventer.on = (events, prereqs, cb, options) => {
 		// Argument mangling {{{
-		if (events && prereqs && !cb) { // Called as events, cb
+		if (events && typeof prereqs == 'function' && !cb) { // Called as events, cb&
 			cb = prereqs;
 			prereqs = [];
+		} else if (events && typeof prereqs == 'function' && typeof cb == 'object') { // Called as events, cb&, options
+			cb = prereqs;
+			prereqs = [];
+			options =  cb;
 		}
 		// }}}
+		// Settings {{{
+		var settings = {
+			source: (options && options.source) || (debug.enabled || debugDetail.enabled ? eventer.getCaller() : 'UNKNOWN'),
+			...options,
+		};
+		// }}}
 
-		if (debug.enabled || debugDetail.enabled) var attacher = eventer.getCaller();
 
 		eventer.utils.castArray(events).forEach(event => {
-			if (debug.enabled) debug('Registered subscriber for', event, 'from', attacher.id, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
+			if (debug.enabled) debug('Registered subscriber for', event, 'from', settings.source, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
 			if (!eventer.eventHandlers[event]) eventer.eventHandlers[event] = [];
 			eventer.eventHandlers[event].push({
-				attacher, prereqs, cb,
+				prereqs, cb,
+				...settings,
 			});
 		});
 
@@ -92,7 +104,7 @@ function Eventer(options) {
 			return Eventer.settings.promise.resolve();
 		} else {
 			debug('Emit', event, 'to', listenerCount, 'subscribers');
-			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.attacher.id));
+			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.source));
 			var result;
 			return Promise.resolve()
 				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
@@ -139,10 +151,7 @@ function Eventer(options) {
 		var parsed = /^\s*at (?<name>.+?) \((?<file>.+?):(?<line>[0-9]+?):(?<char>[0-9]+?)\)$/.exec(stack[0]);
 		if (!parsed) return {id: 'unknown'};
 
-		return {
-			id: parsed.groups.file + (parsed.groups.line ? ` +${parsed.groups.line}` : ''),
-			...parsed.groups,
-		};
+		return parsed.groups.file + (parsed.groups.line ? ` +${parsed.groups.line}` : '');
 	};
 
 
