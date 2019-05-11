@@ -5,6 +5,10 @@ var fspath = require('path');
 function Eventer(options) {
 	var eventer = this;
 
+	eventer.eventerSettings = {
+		debugTimeout: 1000,
+	};
+
 	eventer.eventHandlers = {};
 
 
@@ -33,7 +37,6 @@ function Eventer(options) {
 			...options,
 		};
 		// }}}
-
 
 		eventer.utils.castArray(events).forEach(event => {
 			if (debug.enabled) debug('Registered subscriber for', event, 'from', settings.source, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
@@ -104,10 +107,27 @@ function Eventer(options) {
 			debug('Emit', event, 'to', listenerCount, 'subscribers');
 			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.source));
 			var result;
+
+			var eventQueue = eventer.eventHandlers[event];
+			if (debugDetail.enabled) { // Setup a timeout printer
+				var timeoutCycles = 0;
+				var promisesWaiting = Object.keys(eventer.eventHandlers[event]).reduce((o, k) => o[k] = true, {});
+				eventQueue = eventQueue.map((e, i) => ({
+					...e,
+					finished: false,
+					cb: (...args) => Promise.resolve(e.cb(...args)).finally(()=> eventQueue[i].finished = true), // Wrap callback so we know when its finished
+				}));
+
+				var timeoutTimer = setInterval(()=> {
+					debugDetail('Still waiting for resolve on event', event, `after #${++timeoutCycles} from sources`, eventQueue.filter(e => !e.finished).map(e => e.source));
+				}, this.eventerSettings.debugTimeout);
+			}
+
 			return Promise.resolve()
 				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
-				.then(()=> Eventer.settings.promise.all(eventer.eventHandlers[event].map(c => c.cb(...args))))
+				.then(()=> Eventer.settings.promise.all(eventQueue.map(c => c.cb(...args))))
 				.then(res => result = res)
+				.then(()=> timeoutTimer && clearInterval(timeoutTimer))
 				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...args))))
 				.then(()=> result)
 		}
