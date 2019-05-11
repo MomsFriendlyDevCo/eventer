@@ -18,20 +18,18 @@ function Eventer(options) {
 	* @return {Object} This chainable object
 	* @see app.fire()
 	*/
-	eventer.on = (events, prereqs, cb, options) => {
+	eventer.on = (events, prereqs, cb, options = {}) => {
 		// Argument mangling {{{
 		if (events && typeof prereqs == 'function' && !cb) { // Called as events, cb&
-			cb = prereqs;
-			prereqs = [];
+			[cb, prereqs] = [prereqs, []];
 		} else if (events && typeof prereqs == 'function' && typeof cb == 'object') { // Called as events, cb&, options
-			cb = prereqs;
-			prereqs = [];
-			options =  cb;
+			[cb, prereqs, options] = [prereqs, [], cb];
 		}
 		// }}}
 		// Settings {{{
 		var settings = {
-			source: (options && options.source) || (debug.enabled || debugDetail.enabled ? eventer.getCaller() : 'UNKNOWN'),
+			source: options && options.source ? options.source
+				: debug.enabled || debugDetail.enabled ? eventer.getCaller() : 'UNKNOWN',
 			...options,
 		};
 		// }}}
