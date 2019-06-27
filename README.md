@@ -4,7 +4,7 @@ Yet-another-implementation of the Node standard Event_Emitter library.
 
 This module acts like a drop-in replacement for the standard `require("events")` library but is promise compatible.
 
-This module only really differs in that it offers a nicer way to extend objects (`extend(myObject)`) and handles event emission (`emit(<event>)`) as promises.
+This module only really differs in that it offers a nicer way to extend objects (`extend(myObject)`) and handles event emission (`emit(eventName)`) as promises.
 
 
 Why
@@ -48,21 +48,21 @@ Subscribe to one or more events. The callback is treated as a Promise factory.
 Returns the source object.
 
 
-once(<event-name>, <function>)
-------------------------------
+once(eventName, function)
+--------------------------
 Bind to one event binding exactly _once_.
 This is effectively the same as subscribing via `on()` then calling `off()` to unsubscribing the same function.
 Returns the source object.
 
 
-off(<event-name>, [function])
------------------------------
+off(eventName, [function])
+---------------------------
 Remove an event subscription. If a specific function is specified that lone function is removed, otherwise all bindings are reset.
 Returns the source object.
 
 
-listenerCount(<event-name>)
----------------------------
+listenerCount(eventName)
+-------------------------
 Return the number of listeners for a given event.
 
 
@@ -71,6 +71,6 @@ eventNames()
 Return an array of strings representing each registered event.
 
 
-extend(<object>, [options])
----------------------------
+extend(object, [options])
+-------------------------
 Glue the above methods to the supplied object without all the *faff* of extending object prototypes.
