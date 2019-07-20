@@ -2,8 +2,10 @@ var debug = require('debug')('eventer');
 var debugDetail = require('debug')('eventer:detail');
 var fspath = require('path');
 
-function Eventer(options) {
+function Eventer(options, context) {
 	var eventer = this;
+
+	eventer.context = context || this;
 
 	eventer.eventerSettings = {
 		debugTimeout: 1000,
@@ -47,7 +49,7 @@ function Eventer(options) {
 			});
 		});
 
-		return this;
+		return eventer.context;
 	};
 
 
@@ -67,7 +69,7 @@ function Eventer(options) {
 			}
 		});
 
-		return this;
+		return eventer.context;
 	};
 
 
@@ -197,12 +199,12 @@ module.exports = Eventer;
 Eventer.extend = (obj, options) => {
 	if (!obj) obj = {}; // Create prototype if non given
 
-	var eInstance = new Eventer(options);
+	var eInstance = new Eventer(options, obj);
 
 	Eventer.settings.exposeMethods.forEach(prop => {
 		Object.defineProperty(obj, prop, {
 			enumerable: false,
-			value: eInstance[prop],
+			value: eInstance[prop].bind(obj),
 		});
 	});
 

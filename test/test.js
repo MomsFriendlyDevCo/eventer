@@ -129,4 +129,18 @@ describe('simple scenario tests', ()=> {
 			.then(()=> expect(called).to.deep.equal(['pre:foo', 'foo', 'post:foo', 'pre:bar', 'bar', 'post:bar']))
 	});
 
+	it('should extend native objects correctly', ()=> {
+		var original = {
+			foo: ()=> 'Foo!',
+			bar: ()=> emitter,
+		};
+		var emitter = eventer.extend(original);
+
+		expect(emitter).to.be.equal(original);
+		expect(emitter.on('baz', ()=> 'Baz!')).to.be.equal(emitter);
+		expect(emitter.foo()).to.be.deep.equal('Foo!');
+		expect(emitter.bar()).to.be.deep.equal(emitter);
+		expect(emitter.on('baz', ()=> {})).to.be.equal(emitter);
+	});
+
 });
