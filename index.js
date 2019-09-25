@@ -127,7 +127,15 @@ function Eventer(options, context) {
 
 			return Promise.resolve()
 				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
-				.then(()=> Eventer.settings.promise.all(eventQueue.map(c => c.cb(...args))))
+				.then(()=> eventQueue.reduce((chain, func) => // Exec all promises in series mutating the first arg each time
+					chain.then(()=>
+						Promise.resolve(
+							func.cb(...args)
+						)
+							// Returned non-undefined, mutate first arg to response
+							.then(res => res !== undefined ? args[0] = res : args)
+					)
+				, Promise.resolve()))
 				.then(res => result = res)
 				.then(()=> timeoutTimer && clearInterval(timeoutTimer))
 				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...args))))

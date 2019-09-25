@@ -64,11 +64,11 @@ describe('simple scenario tests', ()=> {
 
 		return Promise.resolve()
 			.then(()=> emitter.emit('foo'))
-			.then(r => expect(r).to.be.deep.equal([1]))
+			.then(r => expect(r).to.be.deep.equal(1))
 			.then(()=> emitter.emit('bar'))
-			.then(r => expect(r).to.be.deep.equal([2]))
+			.then(r => expect(r).to.be.deep.equal(2))
 			.then(()=> emitter.emit('baz'))
-			.then(r => expect(r).to.be.deep.equal([3]))
+			.then(r => expect(r).to.be.deep.equal(3))
 	});
 
 	it('should handle rejected promises / throws', ()=> {
@@ -141,6 +141,19 @@ describe('simple scenario tests', ()=> {
 		expect(emitter.foo()).to.be.deep.equal('Foo!');
 		expect(emitter.bar()).to.be.deep.equal(emitter);
 		expect(emitter.on('baz', ()=> {})).to.be.equal(emitter);
+	});
+
+	it('should handle transform chains correctly', done => {
+		eventer.extend()
+			.on('pipe', v => v+1)
+			.on('pipe', v => v+1)
+			.on('pipe', v => {}) // Shouldn't do anything
+			.on('pipe', v => v+1)
+			.on('pipe', v => {
+				expect(v).to.equal(3);
+				done();
+			})
+			.emit('pipe', 0)
 	});
 
 });
