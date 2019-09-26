@@ -104,11 +104,10 @@ function Eventer(options, context) {
 		if (!listenerCount) {
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
 			debug('Emit', '(no listeners)');
-			return Eventer.settings.promise.resolve();
+			return Eventer.settings.promise.resolve(args[0]);
 		} else {
 			debug('Emit', event, 'to', listenerCount, 'subscribers');
 			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.source));
-			var result;
 
 			var eventQueue = eventer.eventHandlers[event];
 			if (debugDetail.enabled) { // Setup a timeout printer
@@ -125,6 +124,7 @@ function Eventer(options, context) {
 				}, this.eventerSettings.debugTimeout);
 			}
 
+
 			return Promise.resolve()
 				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
 				.then(()=> eventQueue.reduce((chain, func) => // Exec all promises in series mutating the first arg each time
@@ -136,10 +136,9 @@ function Eventer(options, context) {
 							.then(res => res !== undefined ? args[0] = res : args)
 					)
 				, Promise.resolve()))
-				.then(res => result = res)
 				.then(()=> timeoutTimer && clearInterval(timeoutTimer))
 				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...args))))
-				.then(()=> result)
+				.then(()=> args[0])
 		}
 	};
 
