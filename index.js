@@ -211,12 +211,36 @@ Eventer.extend = (obj, options) => {
 	Eventer.settings.exposeMethods.forEach(prop => {
 		Object.defineProperty(obj, prop, {
 			enumerable: false,
+			configurable: true,
 			value: eInstance[prop].bind(obj),
 		});
 	});
 
 	return obj;
 };
+
+
+/**
+* Proxy events from a source emitter into a destination
+* This in effect glues the destinations exposed methods to the source emitter
+* @param {Object} source The source object from where the exposed methods should be taken
+* @param {Object} destination The final event emitter which should recieve the sources events
+* @returns {Object} The mutated destination object
+*/
+Eventer.proxy = (source, destination) => {
+	if (typeof source != 'object' || typeof destination != 'object') throw new Error('Eventer.proxy(source, destination) must both be objects');
+
+	Eventer.settings.exposeMethods.forEach(prop => {
+		Object.defineProperty(destination, prop, {
+			enumerable: false,
+			configurable: true,
+			value: source[prop].bind(destination),
+		});
+	});
+
+	return destination;
+};
+
 
 Eventer.settings = {
 	exposeMethods: ['emit', 'eventNames', 'listenerCount', 'off', 'on', 'once'],

@@ -143,6 +143,20 @@ describe('simple scenario tests', ()=> {
 		expect(emitter.on('baz', ()=> {})).to.be.equal(emitter);
 	});
 
+	it('should support event proxying', done => {
+		var emitter1 = eventer.extend();
+		var emitter2 = eventer.extend();
+
+		eventer.proxy(emitter1, emitter2);
+		emitter2
+			.on('hello', payload => {
+				expect(payload).to.be.equal('world');
+				done();
+			})
+			.emit('hello', 'world')
+	});
+
+
 	it('should handle transform chains correctly', done => {
 		eventer.extend()
 			.on('pipe', v => v+1)

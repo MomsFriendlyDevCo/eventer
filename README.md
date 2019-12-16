@@ -14,6 +14,7 @@ This module differs from the standard event emitter library in several ways:
 * `emit()` acts as a transform pipeline, where each callback can mutate the result before passing it on
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
 * Easily chainable
+* Can proxy events from one event emitter to another
 * Ability to hook into the event call sequence via `meta:preEmit` + `meta:postEmit`
 * Debugging for the standard `event_emitter` object is terrible
 
@@ -85,3 +86,9 @@ Return an array of strings representing each registered event.
 extend(object, [options])
 -------------------------
 Glue the above methods to the supplied object without all the *faff* of extending object prototypes.
+
+
+proxy(source, destination)
+--------------------------
+Proxy events from a source emitter into a destination.
+This in effect glues the destinations exposed methods to the source emitter.
