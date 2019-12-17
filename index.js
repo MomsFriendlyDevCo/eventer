@@ -103,7 +103,7 @@ function Eventer(options, context) {
 		var listenerCount = eventer.listenerCount(event);
 		if (!listenerCount) {
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
-			debug('Emit', '(no listeners)');
+			debug('Emit', event, '(no listeners)');
 			return Eventer.settings.promise.resolve(args[0]);
 		} else {
 			debug('Emit', event, 'to', listenerCount, 'subscribers');
