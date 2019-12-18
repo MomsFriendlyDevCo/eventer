@@ -252,10 +252,13 @@ Eventer.proxy = (source, destination) => {
 	if (typeof source != 'object' || typeof destination != 'object') throw new Error('Eventer.proxy(source, destination) must both be objects');
 
 	Eventer.settings.exposeMethods.forEach(prop => {
+		var boundFunc = source[prop].bind(destination);
+		if (prop == 'emit') boundFunc.reduce = source.emit.reduce.bind(destination); // Special case for emit.reduce sub-function
+
 		Object.defineProperty(destination, prop, {
 			enumerable: false,
 			configurable: true,
-			value: source[prop].bind(destination),
+			value: boundFunc,
 		});
 	});
 
