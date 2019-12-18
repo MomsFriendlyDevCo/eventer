@@ -124,21 +124,26 @@ function Eventer(options, context) {
 				}, this.eventerSettings.debugTimeout);
 			}
 
-
+			var funcArgs = [...args]; // Soft copy args array so we can mutate it without effecting the referenced pointer
 			return Promise.resolve()
-				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...args))))
+				.then(()=> eventer.listenerCount('meta:preEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:preEmit'].map(c => c.cb(event, ...funcArgs))))
 				.then(()=> eventQueue.reduce((chain, func) => // Exec all promises in series mutating the first arg each time
 					chain.then(()=>
 						Promise.resolve(
-							func.cb(...args)
+							func.cb(...funcArgs)
 						)
 							// Returned non-undefined, mutate first arg to response
-							.then(res => res !== undefined ? args[0] = res : args)
+							.then(res => {
+								if (res !== undefined) {
+									debugDetail('Mutate argument via event', event, funcArgs[0], '=>', res);
+									funcArgs[0] = res;
+								}
+							})
 					)
 				, Promise.resolve()))
 				.then(()=> timeoutTimer && clearInterval(timeoutTimer))
-				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...args))))
-				.then(()=> args[0])
+				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...funcArgs))))
+				.then(()=> funcArgs[0])
 		}
 	};
 
