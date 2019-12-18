@@ -3,6 +3,18 @@ var eventer = require('..');
 
 describe('simple scenario tests', ()=> {
 
+	it('should extend a base object with standard properties', ()=> {
+		var emitter =  eventer.extend({});
+
+		expect(emitter).to.have.property('emit');
+		expect(emitter.emit).to.have.property('reduce');
+		expect(emitter).to.have.property('eventNames');
+		expect(emitter).to.have.property('listenerCount');
+		expect(emitter).to.have.property('off');
+		expect(emitter).to.have.property('on');
+		expect(emitter).to.have.property('once');
+	});
+
 	it('should detect simple event emitters', ()=> {
 		var called = [];
 		var emitter =  eventer.extend({});
@@ -64,11 +76,11 @@ describe('simple scenario tests', ()=> {
 
 		return Promise.resolve()
 			.then(()=> emitter.emit('foo'))
-			.then(r => expect(r).to.be.deep.equal(1))
+			.then(r => expect(r).to.be.undefined)
 			.then(()=> emitter.emit('bar'))
-			.then(r => expect(r).to.be.deep.equal(2))
+			.then(r => expect(r).to.be.undefined)
 			.then(()=> emitter.emit('baz'))
-			.then(r => expect(r).to.be.deep.equal(3))
+			.then(r => expect(r).to.be.undefined)
 	});
 
 	it('should handle rejected promises / throws', ()=> {
@@ -157,7 +169,7 @@ describe('simple scenario tests', ()=> {
 	});
 
 
-	it('should handle transform chains correctly', done => {
+	it('should handle transform chains correctly - number reduce', done => {
 		eventer.extend()
 			.on('pipe', v => v+1)
 			.on('pipe', v => v+1)
@@ -167,7 +179,21 @@ describe('simple scenario tests', ()=> {
 				expect(v).to.equal(3);
 				done();
 			})
-			.emit('pipe', 0)
+			.emit.reduce('pipe', 0)
+	});
+
+
+	it('should handle transform chains correctly - string concat', done => {
+		eventer.extend()
+			.on('pipe', v => v + 'a')
+			.on('pipe', v => v + 'b')
+			.on('pipe', v => {}) // Shouldn't do anything
+			.on('pipe', v => v + 'c')
+			.on('pipe', v => {
+				expect(v).to.equal('!abc');
+				done();
+			})
+			.emit.reduce('pipe', '!')
 	});
 
 });

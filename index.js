@@ -95,11 +95,20 @@ function Eventer(options, context) {
 
 	/**
 	* Fire all attached event handlers
+	* NOTE: The behaviour of this function can be changed by calling `.emit.reduce()` instead
+	* If the last argument passed is of the form {eventer: {...}} it is assumed to be the eventer settings for this function
 	* @param {string} event The event to fire
 	* @param {*} [args...] Additional arguments to pass to the callbacks
+	* @param {Object} [args.eventer] Workaround method to pass custom options to this function (only applies to the last arg
+	* @param {boolean} [args.eventer.reduce=false] Whether to treat the emitter as reducable (i.e. the first arg from each promise return mutates the next), if falsy all args are immutable
 	* @returns {Promise} A promise with the combined result
 	*/
 	eventer.emit = (event, ...args) => {
+		var settings = {
+			reduce: false,
+			...(typeof args[args.length-1] == 'object' && args[args.length-1].eventer ? args.pop().eventer : null),
+		};
+
 		var listenerCount = eventer.listenerCount(event);
 		if (!listenerCount) {
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
@@ -134,7 +143,7 @@ function Eventer(options, context) {
 						)
 							// Returned non-undefined, mutate first arg to response
 							.then(res => {
-								if (res !== undefined) {
+								if (res !== undefined && settings.reduce) {
 									debugDetail('Mutate argument via event', event, funcArgs[0], '=>', res);
 									funcArgs[0] = res;
 								}
@@ -146,6 +155,10 @@ function Eventer(options, context) {
 				.then(()=> funcArgs[0])
 		}
 	};
+
+
+	eventer.emit.reduce = (event, ...args) =>
+		eventer.emit(event, ...args, {eventer: {reduce: true}});
 
 
 
@@ -214,10 +227,13 @@ Eventer.extend = (obj, options) => {
 	var eInstance = new Eventer(options, obj);
 
 	Eventer.settings.exposeMethods.forEach(prop => {
+		var boundFunc = eInstance[prop].bind(obj);
+		if (prop == 'emit') boundFunc.reduce = eInstance.emit.reduce.bind(obj); // Special case for emit.reduce sub-function
+
 		Object.defineProperty(obj, prop, {
 			enumerable: false,
 			configurable: true,
-			value: eInstance[prop].bind(obj),
+			value: boundFunc,
 		});
 	});
 

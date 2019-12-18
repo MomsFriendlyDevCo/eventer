@@ -11,7 +11,7 @@ This module differs from the standard event emitter library in several ways:
 
 * `emit()` returns a promise which resolves with the combined `Promise.all()` result of all subscribers. It also rejects with the first subscriber throw.
 * `emit()` resolves all registered events in series, waiting for each unless one throws
-* `emit()` acts as a transform pipeline, where each callback can mutate the result before passing it on
+* `emit.reduce()` acts as a transform pipeline, where each callback can mutate the result before passing it on
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
 * Easily chainable
 * Can proxy events from one event emitter to another
@@ -38,10 +38,24 @@ API
 emit(event, ...payload)
 -----------------------
 Emit an event and return a Promise which will only resolve if all the downstream subscribers resolve.
-Each subscriber is called in series and in the order they subscribed. If any subscriber returns a non-undefined value, the next subscriber gets that result as the next first value.
+Each subscriber is called in series and in the order they subscribed. Any return value from the event handler is discarded - use `emit.reduce()` if you want to work with pipelines.
 If any subscriber throws, the promise rejection payload is the first subscriber error.
-Returns final result of the last promise passed (see example below).
 Note: This function will also emit `meta:preEmit` (as `(eventName, ...args)`) and `meta:postEmit` before and after each event.
+
+
+```javascript
+eventer.extend()
+	.on('greeting', name => console.log(`Hello ${name`)) //= "Hello Matt"
+	.on('greeting', name => console.log(`Hi ${name`)) //= "Hi Matt"
+	.emit('greeting', 'Matt')
+```
+
+
+emit.reduce(event, ...payload)
+------------------------------
+Works the same as `emit()` except that the return value (or eventual value via a Promise) will mutate the first argument of the next function.
+If any subscriber returns a non-undefined value, the next subscriber gets that result as the next first value.
+Returns final result of the last promise passed (see example below).
 
 
 ```javascript
