@@ -15,6 +15,29 @@ describe('simple scenario tests', ()=> {
 		expect(emitter).to.have.property('once');
 	});
 
+	it('should be usable as a class', ()=> {
+		var emitted = {foo: 0, preFoo: 0, postFoo: 0};
+
+		class MyClass extends eventer {
+			foo() {
+				this.emit('foo');
+			};
+		};
+
+		var myInstance = new MyClass()
+			.on('foo', ()=> emitted.foo++)
+			.on('meta:preEmit', ()=> emitted.preFoo++)
+			.on('meta:postEmit', ()=> emitted.postFoo++)
+
+		expect(myInstance).to.have.property('foo');
+		expect(myInstance).to.have.property('emit');
+
+		return myInstance.emit('foo')
+			.then(()=> {
+				expect(emitted).to.deep.equal({foo: 1, preFoo: 1, postFoo: 1});
+			})
+	});
+
 	it('should detect simple event emitters', ()=> {
 		var called = [];
 		var emitter =  eventer.extend({});
