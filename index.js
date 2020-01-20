@@ -104,6 +104,7 @@ function Eventer(options, context) {
 	* @returns {Promise} A promise with the combined result
 	*/
 	eventer.emit = (event, ...args) => {
+		if (typeof event != 'string') throw new Error('Eventer.emit(event, args...) - event name must be a string');
 		var settings = {
 			reduce: false,
 			...(typeof args[args.length-1] == 'object' && args[args.length-1].eventer ? args.pop().eventer : null),
