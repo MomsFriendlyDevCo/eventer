@@ -62,8 +62,8 @@ function Eventer(options, context) {
 	eventer.off = (events, cb) => {
 		eventer.utils.castArray(events).forEach(event => {
 			debug('Remove listener', event);
-			if (cb) { // Specific function to remove
-				eventer.eventHandlers[event] = eventer.eventHandlers[event].filter(c => c.cb == cb);
+			if (cb && Object.prototype.hasOwnProperty(eventer.eventHandlers, event)) { // Specific function to remove
+				eventer.eventHandlers[event] = eventer.eventHandlers[event].filter(c => c.cb === cb);
 			} else { // Remove all handlers
 				eventer.eventHandlers[event] = [];
 			}
