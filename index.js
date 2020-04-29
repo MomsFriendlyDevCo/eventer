@@ -86,10 +86,12 @@ function Eventer(options, context) {
 		}
 		// }}}
 
-		return eventer.on(events, prereqs, (...args) => {
-			eventer.off(events, cb);
+		var factory = (...args) => {
+			eventer.off(events, factory);
 			return cb(...args);
-		});
+		};
+
+		return eventer.on(events, prereqs, factory);
 	};
 
 
