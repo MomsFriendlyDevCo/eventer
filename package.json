@@ -25,6 +25,6 @@
   "homepage": "https://github.com/MomsFriendlyDevCo/eventer#readme",
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^6.2.2"
+    "mocha": "^8.0.1"
   }
 }
