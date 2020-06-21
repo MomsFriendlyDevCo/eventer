@@ -4,6 +4,24 @@ Yet-another-implementation of the Node standard `Event_Emitter` library.
 
 This module acts like a drop-in replacement for the standard `require("events")` library but is promise compatible, pipeable and easily extendible.
 
+Eventer instances are both simultaniously an event emitter stand-in _and_ a promisable while leaving the original context alone.
+
+
+```javascript
+var myEmitter = eventer.extend({foo: 123})
+	.on('thing', ()=> { /*...*/ }) // React to an event
+	.emit('thing', val) // Emit an event
+	.on('end', ()=> { /*...*/}) // React to a closing event
+	.then(()=> { /*...*/ }) // ...or use promise syntax (context is the original object so `this.foo` is available)
+	.catch(()=> { /*...*/ }) // ...likewise use promise rejections
+	.resolve(val) // Trigger the closing event (resolves all 'thens' and `.on('end')`)
+	.reject(val) // ...or reject
+
+
+// Original object is still accessible:
+myEmitter.foo //= 123
+```
+
 
 Why?
 ----
@@ -14,6 +32,7 @@ This module differs from the standard event emitter library in several ways:
 * `emit.reduce()` acts as a transform pipeline, where each callback can mutate the result before passing it on
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
 * Easily chainable
+* Eventer instances are "promise like" in that you can call `.on('end', func)` or `.then(func)` on and they will react accordingly. Likewise `.on('error', func)` and `.catch(func)`
 * Can proxy events from one event emitter to another
 * Ability to hook into the event call sequence via `meta:preEmit` + `meta:postEmit`
 * Debugging for the standard `event_emitter` object is terrible
@@ -106,3 +125,36 @@ proxy(source, destination)
 --------------------------
 Proxy events from a source emitter into a destination.
 This in effect glues the destinations exposed methods to the source emitter.
+
+
+promise()
+---------
+Returns the raw promise object rather than its wrapped functions (`then`, `catch` + `finally`).
+
+
+then(func)
+----------
+Queue up a promisable action which will run on any `.resolve(val)` or `.emit('end', val)` call.
+The function is executed with the original object context.
+
+
+catch(func)
+-----------
+Queue up a promisable action which will run on any `.reject(val)` or `.emit('error', val)` call.
+The function is executed with the original object context.
+
+
+finally(func)
+-------------
+Queue up a promisable action which will run on any resolution or rejection.
+The function is executed with the original object context.
+
+
+resolve(val)
+------------
+Resolve the internal promise. This is syntactic sugar for `.emit('end', val)`.
+
+
+reject(val)
+------------
+Reject the internal promise. This is syntactic sugar for `.emit('end', val)`.

@@ -210,6 +210,43 @@ function Eventer(options, context) {
 		isArray: a => Object.prototype.toString.call(a) == '[object Array]',
 	};
 
+
+	if (!options || options.wrapPromise !== undefined) {
+		// Setup private $promise promise instance
+		eventer.$promise = new Promise((resolve, reject) => {
+			eventer.resolve = (...args) => {
+				resolve.apply(eventer.context, args);
+				return eventer;
+			};
+			eventer.reject = (...args) => {
+				reject.apply(eventer.context, args);
+				return eventer;
+			};
+		});
+
+		// Make a func to return the private promise if its requested
+		eventer.promise = ()=> eventer.$promise;
+
+		// Map each promise method into this object mixin
+		['then', 'catch', 'finally'].forEach(method =>
+			eventer[method] = (...args) => {
+				eventer.$promise[method].apply(
+					eventer.$promise, // Promise context, has to be set or Promise is unhappy
+					args.map(arg => // Map all funcs with this object as the context, otherwise leave alone
+						typeof arg == 'function'
+							? arg.bind(eventer.context)
+							: arg
+					)
+				);
+				return eventer;
+			},
+		);
+
+		// Listen for 'end' / 'error' events and map into promise
+		eventer.on('end', eventer.resolve);
+		eventer.on('error', eventer.reject);
+	}
+
 	return eventer;
 };
 
@@ -227,7 +264,10 @@ Eventer.extend = (obj, options) => {
 
 	var eInstance = new Eventer(options, obj);
 
-	Eventer.settings.exposeMethods.forEach(prop => {
+	[
+		...Eventer.settings.exposeMethods,
+		...(!options || options.wrapPromise !== undefined ? Eventer.settings.exposeMethodsPromise : []),
+	].forEach(prop => {
 		var boundFunc = eInstance[prop].bind(obj);
 		if (prop == 'emit') boundFunc.reduce = eInstance.emit.reduce.bind(obj); // Special case for emit.reduce sub-function
 
@@ -269,8 +309,10 @@ Eventer.proxy = (source, destination) => {
 
 Eventer.settings = {
 	exposeMethods: ['emit', 'eventNames', 'listenerCount', 'off', 'on', 'once'],
+	exposeMethodsPromise: ['then', 'catch', 'finally', 'resolve', 'reject', 'promise'],
 	errors: {
 		emitOnUnknown: false,
 	},
 	promise: Promise,
+	wrapPromise: true,
 };

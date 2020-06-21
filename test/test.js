@@ -1,7 +1,7 @@
 var expect = require('chai').expect;
 var eventer = require('..');
 
-describe('simple scenario tests', ()=> {
+describe('simple emitter tests', ()=> {
 
 	it('should extend a base object with standard properties', ()=> {
 		var emitter =  eventer.extend({});
@@ -146,7 +146,7 @@ describe('simple scenario tests', ()=> {
 
 	it('should fire global `meta:preEmit` + `meta:postEmit` events', ()=> {
 		var called = [];
-		var emitter =  eventer.extend({});
+		var emitter =  eventer.extend({}, {eventer: {wrapPromise: false}});
 
 		emitter
 			.on('meta:preEmit', e => called.push(`pre:${e}`))
