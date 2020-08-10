@@ -121,6 +121,11 @@ extend(object, [options])
 Glue the above methods to the supplied object without all the *faff* of extending object prototypes.
 
 
+extendPromise(object, [options])
+--------------------------------
+Same as `extend()` but also add promise functionality.
+
+
 proxy(source, destination)
 --------------------------
 Proxy events from a source emitter into a destination.

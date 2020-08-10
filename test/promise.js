@@ -4,20 +4,20 @@ var eventer = require('..');
 describe('promise-like handler', ()=> {
 
 	it('should act as a thennable promise (then + resolve)', ()=>
-		eventer.extend()
+		eventer.extendPromise()
 			.then(val => expect(val).to.equal('p-tr'))
 			.resolve('p-tr')
 	);
 
 	it('should act as a thennable promise (resolve + then)', ()=>
-		eventer.extend()
+		eventer.extendPromise()
 			.resolve('p-rt')
 			.then(val => expect(val).to.equal('p-rt'))
 	);
 
 	// Skipped as Node complains about global promise catching, works fine though
 	it.skip('should act as a thennable promise (catch + reject)', done => {
-		eventer.extend()
+		eventer.extendPromise()
 			.then(()=> expect.fail)
 			.catch(e => {
 				expect(e).to.equal('p-cr');
@@ -28,7 +28,7 @@ describe('promise-like handler', ()=> {
 
 	// Skipped as Node complains about global promise catching, works fine though
 	it.skip('should act as a thennable promise (reject + catch)', done => {
-		eventer.extend()
+		eventer.extendPromise()
 			.reject('p-rc')
 			.then(()=> expect.fail)
 			.catch(e => {
@@ -38,7 +38,7 @@ describe('promise-like handler', ()=> {
 	});
 
 	it('should return the raw promise', ()=> {
-		var e = eventer.extend();
+		var e = eventer.extendPromise();
 
 		expect(e.promise()).to.be.an.instanceOf(Promise);
 
@@ -48,7 +48,7 @@ describe('promise-like handler', ()=> {
 	});
 
 	it('should react to `.emit(\'end\', val)`', ()=> {
-		var e = eventer.extend();
+		var e = eventer.extendPromise();
 		e.emit('end', 'e-end');
 
 		return e.then(val => expect(val).to.equal('e-end'));
@@ -56,7 +56,7 @@ describe('promise-like handler', ()=> {
 
 	// Skipped as Node complains about global promise catching, works fine though
 	it.skip('should react to `.emit(\'error\', val)`', done => {
-		var e = eventer.extend();
+		var e = eventer.extendPromise();
 		e.emit('error', 'e-error');
 
 		e
@@ -68,7 +68,7 @@ describe('promise-like handler', ()=> {
 	});
 
 	it('can access custom properties within promise methods', ()=>
-		eventer.extend({
+		eventer.extendPromise({
 			foo: 'Foo!',
 			bar: 123,
 		})

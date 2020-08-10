@@ -142,7 +142,7 @@ function Eventer(options, context) {
 				.then(()=> eventQueue.reduce((chain, func) => // Exec all promises in series mutating the first arg each time
 					chain.then(()=>
 						Promise.resolve(
-							func.cb(...funcArgs)
+							func.cb.apply(eventer.context, funcArgs)
 						)
 							// Returned non-undefined, mutate first arg to response
 							.then(res => {
@@ -268,7 +268,7 @@ Eventer.extend = (obj, options) => {
 
 	[
 		...Eventer.settings.exposeMethods,
-		...(!options || options.wrapPromise !== undefined ? Eventer.settings.exposeMethodsPromise : []),
+		...(options && options.wrapPromise ? Eventer.settings.exposeMethodsPromise : []),
 	].forEach(prop => {
 		var boundFunc = eInstance[prop].bind(obj);
 		if (prop == 'emit') boundFunc.reduce = eInstance.emit.reduce.bind(obj); // Special case for emit.reduce sub-function
@@ -281,6 +281,22 @@ Eventer.extend = (obj, options) => {
 	});
 
 	return obj;
+};
+
+
+/**
+* Conveneince method to extend an object and include promise methods
+* i.e. return an event emitter + promise functionality
+* @param {Object} obj The object to extend
+* @param {Object} [options] Additional options
+* @returns {Object} The input object
+*/
+Eventer.extendPromise = (obj, options) => {
+	var settings = {
+		wrapPromise: true,
+		...options,
+	};
+	return Eventer.extend(obj, settings);
 };
 
 
@@ -316,5 +332,5 @@ Eventer.settings = {
 		emitOnUnknown: false,
 	},
 	promise: Promise,
-	wrapPromise: true,
+	wrapPromise: false,
 };
