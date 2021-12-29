@@ -219,4 +219,18 @@ describe('simple emitter tests', ()=> {
 			.emit.reduce('pipe', '!')
 	});
 
+
+	it('should interrupt emitter queues if required (`order` setting)', done => {
+		var output = [];
+		eventer.extend()
+			.on('say', v => output.push(2))
+			.on('say', v => output.push(3))
+			.on('say', v => output.push(1), {order: 'first'})
+			.on('say', v => {
+				expect(output).to.deep.equal([1, 2, 3]);
+				done();
+			}, {order: 'last'})
+			.emit('say')
+	});
+
 });

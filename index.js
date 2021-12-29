@@ -21,6 +21,7 @@ function Eventer(options, context) {
 	* @param {function} [cb] Optional callback to fire. Called as `(err, next)`
 	* @param {Object} [options] Addiotional options to pass
 	* @param {string} [options.alias] How to refer to the source of the function
+	* @param {string} [options.order='last'] Where the event should be queued within the sequence. ENUM: 'last' (default) - Queue at current end of sequence, 'first' - queue at the start
 	* @return {Object} This chainable object
 	* @see app.fire()
 	*/
@@ -36,6 +37,7 @@ function Eventer(options, context) {
 		var settings = {
 			source: options && options.source ? options.source
 				: debug.enabled || debugDetail.enabled ? eventer.getCaller() : 'UNKNOWN',
+			order: 'last',
 			...options,
 		};
 		// }}}
@@ -43,7 +45,7 @@ function Eventer(options, context) {
 		eventer.utils.castArray(events).forEach(event => {
 			if (debug.enabled) debug('Registered subscriber for', event, 'from', settings.source, (eventer.utils.isArray(prereqs) && prereqs.length ? ' (prereqs: ' + prereqs.join(', ') + ')' : ''));
 			if (!eventer.eventHandlers[event]) eventer.eventHandlers[event] = [];
-			eventer.eventHandlers[event].push({
+			eventer.eventHandlers[event][settings.order == 'first' ? 'unshift' : 'push']({
 				prereqs, cb,
 				...settings,
 			});

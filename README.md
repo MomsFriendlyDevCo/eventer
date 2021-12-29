@@ -31,6 +31,8 @@ This module differs from the standard event emitter library in several ways:
 * `emit()` resolves all registered events in series, waiting for each unless one throws
 * `emit.reduce()` acts as a transform pipeline, where each callback can mutate the result before passing it on
 * `eventer.extend(anObject)` is nicer than the rather strange prototype inheritance system that EventEmitter recommends
+* `on()` should support prerequisite functions
+* `on()` should support at least simple queue functions ("last", the default and "first")
 * Easily chainable
 * Eventer instances are "promise like" in that you can call `.on('end', func)` or `.then(func)` on and they will react accordingly. Likewise `.on('error', func)` and `.catch(func)`
 * Can proxy events from one event emitter to another
@@ -87,10 +89,17 @@ eventer.extend()
 ```
 
 
-on(events, function)
---------------------
+on(events, function, options)
+-----------------------------
 Subscribe to one event (if its a string) or multiple events (if an array of strings). The callback is treated as a Promise factory.
 Returns the chainable source object.
+
+Options are:
+
+| Option  | Type     | Default         | Description                                                                                          |
+|---------|----------|-----------------|------------------------------------------------------------------------------------------------------|
+| `alias` | `String` | Function caller | How to refer to the queued event handler if using pre-requisites, defaults thte function caller name |
+| `order` | `String` | `"last"`        | Where to add the function handler in the sequence, defaults to appending to the emitter stack        |
 
 
 once(eventName, function)
