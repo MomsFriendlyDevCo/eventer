@@ -1,7 +1,7 @@
 var expect = require('chai').expect;
 var eventer = require('..');
 
-describe.only('emitter sync mode', ()=> {
+describe('emitter sync mode', ()=> {
 
 	it('should perform simple synchronous emitter tasks', ()=> {
 		var lastVal = 0;
