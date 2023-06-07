@@ -16,12 +16,12 @@ function Eventer(options, context) {
 
 	/**
 	* Function used to bind into a framework emitter
-	* @param {string|array <string>} events The emitter to wait for, if this is an array of strings any of the matching events will trigger the callback, possibly multiple times
-	* @param {string|array} [prereqs] Optional single string or array of prerequisite services we should fire after
-	* @param {function} [cb] Optional callback to fire. Called as `(err, next)`
+	* @param {String|Array<String>} events The emitter to wait for, if this is an array of strings any of the matching events will trigger the callback, possibly multiple times
+	* @param {String|Array} [prereqs] Optional single string or array of prerequisite services we should fire after
+	* @param {Function} [cb] Optional callback to fire. Called as `(err, next)`
 	* @param {Object} [options] Addiotional options to pass
-	* @param {string} [options.alias] How to refer to the source of the function
-	* @param {string} [options.order='last'] Where the event should be queued within the sequence. ENUM: 'last' (default) - Queue at current end of sequence, 'first' - queue at the start
+	* @param {String} [options.alias] How to refer to the source of the function
+	* @param {String} [options.order='last'] Where the event should be queued within the sequence. ENUM: 'last' (default) - Queue at current end of sequence, 'first' - queue at the start
 	* @return {Object} This chainable object
 	* @see app.fire()
 	*/
@@ -57,8 +57,8 @@ function Eventer(options, context) {
 
 	/**
 	* Remove a binding from an event emitter
-	* @param {string|array <string>} events The event(s) to remove the binding from
-	* @param {function} [cb] The specific callback to remove
+	* @param {String|Array<String>} events The event(s) to remove the binding from
+	* @param {Function} [cb] The specific callback to remove
 	* @return {Object} This chainable object
 	*/
 	eventer.off = (events, cb) => {
@@ -101,10 +101,10 @@ function Eventer(options, context) {
 	* Fire all attached event handlers
 	* NOTE: The behaviour of this function can be changed by calling `.emit.reduce()` instead
 	* If the last argument passed is of the form {eventer: {...}} it is assumed to be the eventer settings for this function
-	* @param {string} event The event to fire
+	* @param {String} event The event to fire
 	* @param {*} [args...] Additional arguments to pass to the callbacks
 	* @param {Object} [args.eventer] Workaround method to pass custom options to this function (only applies to the last arg
-	* @param {boolean} [args.eventer.reduce=false] Whether to treat the emitter as reducable (i.e. the first arg from each promise return mutates the next), if falsy all args are immutable
+	* @param {Boolean} [args.eventer.reduce=false] Whether to treat the emitter as reducable (i.e. the first arg from each promise return mutates the next), if falsy all args are immutable
 	* @returns {Promise} A promise with the combined result
 	*/
 	eventer.emit = (event, ...args) => {
@@ -162,6 +162,12 @@ function Eventer(options, context) {
 	};
 
 
+	/**
+	* Utility function to perform an emit reduce operation
+	* @param {String|Array<String>} Event(s) to emit
+	* @param {*} [args...] Optional emitter args
+	* @returns {*} The result of the reduction
+	*/
 	eventer.emit.reduce = (event, ...args) =>
 		eventer.emit(event, ...args, {eventer: {reduce: true}});
 
@@ -169,8 +175,8 @@ function Eventer(options, context) {
 
 	/**
 	* Return the number of listeners for an event
-	* @param {string} event The event to query
-	* @returns {number} The number of listeners
+	* @param {String} event The event to query
+	* @returns {Number} The number of listeners
 	*/
 	eventer.listenerCount = event =>
 		!eventer.eventHandlers[event]
@@ -180,7 +186,7 @@ function Eventer(options, context) {
 
 	/**
 	* Returns an array of all registered events
-	* @returns {array <string>} An array of strings for each known event
+	* @returns {Array<String>} An array of strings for each known event
 	*/
 	eventer.eventNames = ()=>
 		Object.keys(eventer.eventHandlers);
