@@ -19,7 +19,7 @@ function Eventer(options, context) {
 	* @param {String|Array<String>} events The emitter to wait for, if this is an array of strings any of the matching events will trigger the callback, possibly multiple times
 	* @param {String|Array} [prereqs] Optional single string or array of prerequisite services we should fire after
 	* @param {Function} [cb] Optional callback to fire. Called as `(err, next)`
-	* @param {Object} [options] Addiotional options to pass
+	* @param {Object} [options] Additional options to pass
 	* @param {String} [options.alias] How to refer to the source of the function
 	* @param {String} [options.order='last'] Where the event should be queued within the sequence. ENUM: 'last' (default) - Queue at current end of sequence, 'first' - queue at the start
 	* @return {Object} This chainable object
@@ -105,21 +105,28 @@ function Eventer(options, context) {
 	* @param {*} [args...] Additional arguments to pass to the callbacks
 	* @param {Object} [args.eventer] Workaround method to pass custom options to this function (only applies to the last arg
 	* @param {Boolean} [args.eventer.reduce=false] Whether to treat the emitter as reducable (i.e. the first arg from each promise return mutates the next), if falsy all args are immutable
-	* @returns {Promise} A promise with the combined result
+	* @param {Boolean} [args.eventer.sync=false] Whether to perform the emit in sync mode
+	* @param {Boolean} [args.eventer.syncThrow=true] If in sync mode and any emitted handler returns a Promise(alike) throw an error
+	* @returns {Promise|Object} A promise with the combined result OR the original object if in sync mode
 	*/
 	eventer.emit = (event, ...args) => {
 		if (typeof event != 'string') throw new Error('Eventer.emit(event, args...) - event name must be a string');
 		var settings = {
 			reduce: false,
+			sync: false,
+			syncThrow: true,
 			...(typeof args[args.length-1] == 'object' && args[args.length-1].eventer ? args.pop().eventer : null),
 		};
 
 		var listenerCount = eventer.listenerCount(event);
 		if (!listenerCount) {
+			// No emitters / Nothing to do {{{
 			if (Eventer.settings.errors.emitOnUnkown) throw new Error(`Attempt to emit on unknown event "${event}"`);
 			debug('Emit', event, '(no listeners)');
-			return Eventer.settings.promise.resolve(args[0]);
-		} else {
+			return settings.sync ? eventer.context : Eventer.settings.promise.resolve(args[0]);
+			// }}}
+		} else if (settings.sync == false) {
+			// Emit in async mode {{{
 			debug('Emit', event, 'to', listenerCount, 'subscribers');
 			if (debugDetail.enabled) debugDetail('Emit', event, eventer.eventHandlers[event].map(e => e.source));
 
@@ -158,6 +165,19 @@ function Eventer(options, context) {
 				.then(()=> timeoutTimer && clearInterval(timeoutTimer))
 				.then(()=> eventer.listenerCount('meta:postEmit') && Eventer.settings.promise.all(eventer.eventHandlers['meta:postEmit'].map(c => c.cb(event, ...funcArgs))))
 				.then(()=> funcArgs[0])
+			// }}}
+		} else {
+			// Emit in sync mode {{{
+			var funcArgs = [...args]; // Soft copy args array so we can mutate it without effecting the referenced pointer
+			eventer.eventHandlers[event].forEach(func => {
+				var res = func.cb.apply(eventer.context, funcArgs);
+
+				if (settings.syncThrow && (res instanceof Promise || (res && typeof res.then == 'function'))) {
+					throw new Error(`Emit handler for "${event}" returned a promise(alike) in sync mode - only synchronous responses are valid`);
+				}
+			});
+			return eventer.context;
+			// }}}
 		}
 	};
 
@@ -170,6 +190,26 @@ function Eventer(options, context) {
 	*/
 	eventer.emit.reduce = (event, ...args) =>
 		eventer.emit(event, ...args, {eventer: {reduce: true}});
+
+
+	/**
+	* Utility function to perform an emit sync operation
+	* @param {String|Array<String>} Event(s) to emit
+	* @param {*} [args...] Optional emitter args
+	* @returns {Object} The source object
+	*/
+	eventer.emitSync = eventer.emit.sync = (event, ...args) =>
+		eventer.emit(event, ...args, {eventer: {sync: true}});
+
+
+	/**
+	* Utility function to perform an emit sync operation
+	* @param {String|Array<String>} Event(s) to emit
+	* @param {*} [args...] Optional emitter args
+	* @returns {Object} The source object
+	*/
+	eventer.emit.sync = (event, ...args) =>
+		eventer.emit(event, ...args, {eventer: {sync: true}});
 
 
 
@@ -279,7 +319,11 @@ Eventer.extend = (obj, options) => {
 		...(options && options.wrapPromise ? Eventer.settings.exposeMethodsPromise : []),
 	].forEach(prop => {
 		var boundFunc = eInstance[prop].bind(obj);
-		if (prop == 'emit') boundFunc.reduce = eInstance.emit.reduce.bind(obj); // Special case for emit.reduce sub-function
+		if (prop == 'emit') { // Special case for emit.* sub-functions
+			Eventer.settings.exposeSubMethods.forEach(m =>
+				boundFunc[m] = eInstance.emit[m].bind(obj)
+			);
+		}
 
 		Object.defineProperty(obj, prop, {
 			enumerable: false,
@@ -320,7 +364,11 @@ Eventer.proxy = (source, destination) => {
 
 	Eventer.settings.exposeMethods.forEach(prop => {
 		var boundFunc = source[prop].bind(destination);
-		if (prop == 'emit') boundFunc.reduce = source.emit.reduce.bind(destination); // Special case for emit.reduce sub-function
+		if (prop == 'emit') { // Special case for emit.* sub-functions
+			Eventer.settings.exposeSubMethods.forEach(m =>
+				boundFunc[m] = source.emit[m].bind(destination)
+			);
+		}
 
 		Object.defineProperty(destination, prop, {
 			enumerable: false,
@@ -334,7 +382,8 @@ Eventer.proxy = (source, destination) => {
 
 
 Eventer.settings = {
-	exposeMethods: ['emit', 'eventNames', 'listenerCount', 'off', 'on', 'once'],
+	exposeMethods: ['emit', 'emitSync', 'eventNames', 'listenerCount', 'off', 'on', 'once'],
+	exposeSubMethods: ['reduce', 'sync'],
 	exposeMethodsPromise: ['then', 'catch', 'finally', 'resolve', 'reject', 'promise'],
 	errors: {
 		emitOnUnknown: false,

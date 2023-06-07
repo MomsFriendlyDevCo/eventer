@@ -89,6 +89,12 @@ eventer.extend()
 ```
 
 
+emit.sync(event, ...payload)
+----------------------------
+Works the same as `emit()` except that all responses are expected to be syncronous. Any promise(like) response will instead throw.
+The response will be the input object.
+
+
 on(events, function, options)
 -----------------------------
 Subscribe to one event (if its a string) or multiple events (if an array of strings). The callback is treated as a Promise factory.
